@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
-msg_info "1"
 source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
 
 # Copyright (c) 2021-2025 community-scripts ORG
 # Author: Rodrigo Roldan
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://github.com/smallstep/certificates
-msg_info "Pre Init Vars"
+
 APP="Step-CA"
-msg_info "Init Vars"
 var_tags="${var_tags:-ca}"
 var_cpu="${var_cpu:-1}"
 var_ram="${var_ram:-512}"
@@ -38,11 +36,9 @@ function update_script() {
     msg_ok "Updated ${APP} in LXC"
     exit
 }
-msg_info "Pre Start"
+
 start
-msg_info "Pre build_container"
 build_container
-msg_info "Pre description"
 description
 
 msg_info "Installing ${APP}"
