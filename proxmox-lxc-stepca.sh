@@ -7,6 +7,7 @@ source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxV
 # Source: https://github.com/smallstep/certificates
 
 APP="Step-CA"
+msg_info "Init Vars"
 var_tags="${var_tags:-ca}"
 var_cpu="${var_cpu:-1}"
 var_ram="${var_ram:-512}"
@@ -36,9 +37,11 @@ function update_script() {
     msg_ok "Updated ${APP} in LXC"
     exit
 }
-
+msg_info "Pre Start"
 start
+msg_info "Pre build_container"
 build_container
+msg_info "Pre description"
 description
 
 msg_info "Installing ${APP}"
