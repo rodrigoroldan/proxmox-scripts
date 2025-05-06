@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
+# -----------------------------------------------------------------------------
+# Script de provisionamento LXC “Step CA” para Proxmox (community-scripts style)
+# -----------------------------------------------------------------------------
+
+# 1) Carrega o build.func oficial
 source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
 
-# evita chamadas falhando a get_header/get_description
-get_header()     { :; }
-get_description(){ :; }
+# 2) Stubs para evitar erros 404/400 nas chamadas de header/description
+get_header()      { :; }
+get_description() { :; }
 
-# Copyright (c) 2021-2025 tteck
-# Author: tteck (tteckster)
-# License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
-# Source: https://www.debian.org/
-
+# 3) Metadados do script
 APP="Step CA"
 var_tags="${var_tags:-ca}"
 var_cpu="${var_cpu:-1}"
@@ -19,35 +20,38 @@ var_os="${var_os:-debian}"
 var_version="${var_version:-12}"
 var_unprivileged="${var_unprivileged:-1}"
 
+# 4) Inicia framework de validações e UI
 header_info "$APP"
 variables
 color
 catch_errors
 
+# 5) Função de update (chamada via --update)
 function update_script() {
-  # stubs garantem que header_info não falha aqui
-  header_info
+  header_info "$APP"       # Não falhará, pois get_header está stubado
   check_container_storage
   check_container_resources
 
-  if [[ ! -d /var ]]; then
-    msg_error "No ${APP} Installation Found!"
+  if [[ ! -x /usr/bin/step-ca ]]; then
+    msg_error "Nenhuma instalação do ${APP} encontrada!"
     exit 1
   fi
 
-  msg_info "Updating ${APP} LXC"
+  msg_info "Atualizando ${APP} no LXC"
   $STD apt-get update
   $STD apt-get -y upgrade
-  msg_ok "Updated ${APP} LXC"
+  msg_ok "Atualizado ${APP}"
   exit 0
 }
 
+# 6) Criação do container
 start
 build_container
 
-# stub de descrição — não vai falhar
+# 7) Descrição (stubbed, não falhará)
 description
 
+# 8) Instalação do Step CA
 msg_info "Instalando ${APP}"
 $STD apt-get update
 $STD apt-get install -y --no-install-recommends curl vim gpg ca-certificates
@@ -55,12 +59,12 @@ $STD curl -fsSL https://packages.smallstep.com/keys/apt/repo-signing-key.gpg \
      -o /etc/apt/trusted.gpg.d/smallstep.asc
 $STD echo 'deb [signed-by=/etc/apt/trusted.gpg.d/smallstep.asc] \
      https://packages.smallstep.com/stable/debian debs main' \
-     | tee /etc/apt/sources.list.d/smallstep.list
+     > /etc/apt/sources.list.d/smallstep.list
 $STD apt-get update
 $STD apt-get -y install step-cli step-ca
 msg_ok "${APP} instalado"
 
-# inicializa a CA se ainda não existir
+# 9) Inicializa a CA se ainda não existir
 if [[ ! -f /etc/step/config/ca.json ]]; then
   msg_info "Inicializando configuração do ${APP}"
   $STD step ca init \
@@ -71,6 +75,7 @@ if [[ ! -f /etc/step/config/ca.json ]]; then
   msg_ok "${APP} inicializado"
 fi
 
+# 10) Mensagem final
 msg_ok "Concluído com sucesso!"
 echo -e "${CREATING}${GN}${APP} configurado com sucesso!${CL}"
 echo -e "${INFO}${YW} Acesse sua CA em:${CL}"
