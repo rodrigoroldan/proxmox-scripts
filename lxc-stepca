@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+# Copyright (c) 2021-2025 tteck
+# Author: tteck (tteckster)
+# License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
+# Source: https://www.debian.org/
+
+APP="Debian"
+var_tags="${var_tags:-os}"
+var_cpu="${var_cpu:-1}"
+var_ram="${var_ram:-512}"
+var_disk="${var_disk:-2}"
+var_os="${var_os:-debian}"
+var_version="${var_version:-12}"
+var_unprivileged="${var_unprivileged:-1}"
+
+header_info "$APP"
+variables
+color
+catch_errors
+
+function update_script() {
+  header_info
+  check_container_storage
+  check_container_resources
+  if [[ ! -d /var ]]; then
+    msg_error "No ${APP} Installation Found!"
+    exit
+  fi
+  msg_info "Updating $APP LXC"
+  $STD apt-get update
+  $STD apt-get -y upgrade
+  msg_ok "Updated $APP LXC"
+  exit
+}
+
+start
+build_container
+description
+
+msg_info "Instalando ${APP}"
+$STD apt-get update
+$STD apt-get install -y --no-install-recommends curl vim gpg ca-certificates
+$STD curl -fsSL https://packages.smallstep.com/keys/apt/repo-signing-key.gpg -o /etc/apt/trusted.gpg.d/smallstep.asc && echo 'deb [signed-by=/etc/apt/trusted.gpg.d/smallstep.asc] https://packages.smallstep.com/stable/debian debs main' | tee /etc/apt/sources.list.d/smallstep.list
+$STD apt-get update
+$STD apt-get -y install step-cli step-ca
+msg_ok "${APP} instalado"
+
+# inicializa a CA se ainda não existir
+if [[ ! -f /etc/step/config/ca.json ]]; then
+  msg_info "Inicializando configuração do ${APP}"
+  $STD step ca init \
+    --name "Internal CA" \
+    --dns "${HOSTNAME}" \
+    --address ":8443" \
+    --provisioner password
+  msg_ok "${APP} inicializado"
+fi
+
+msg_ok "Concluído com sucesso!"
+echo -e "${CREATING}${GN}${APP} configurado com sucesso!${CL}"
+echo -e "${INFO}${YW} Acesse sua CA em:${CL}"
+echo -e "${TAB}${GATEWAY}${BGN}https://${IP}:8443${CL}"
