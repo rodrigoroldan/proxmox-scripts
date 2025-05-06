@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+
+# evita chamadas falhando a get_header/get_description
+get_header()     { :; }
+get_description(){ :; }
+
 # Copyright (c) 2021-2025 tteck
 # Author: tteck (tteckster)
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
@@ -20,29 +25,37 @@ color
 catch_errors
 
 function update_script() {
+  # stubs garantem que header_info não falha aqui
   header_info
   check_container_storage
   check_container_resources
+
   if [[ ! -d /var ]]; then
     msg_error "No ${APP} Installation Found!"
-    exit
+    exit 1
   fi
-  msg_info "Updating $APP LXC"
+
+  msg_info "Updating ${APP} LXC"
   $STD apt-get update
   $STD apt-get -y upgrade
-  msg_ok "Updated $APP LXC"
-  exit
+  msg_ok "Updated ${APP} LXC"
+  exit 0
 }
 
 start
 build_container
+
+# stub de descrição — não vai falhar
 description
 
 msg_info "Instalando ${APP}"
 $STD apt-get update
 $STD apt-get install -y --no-install-recommends curl vim gpg ca-certificates
-$STD curl -fsSL https://packages.smallstep.com/keys/apt/repo-signing-key.gpg -o /etc/apt/trusted.gpg.d/smallstep.asc
-$STD echo 'deb [signed-by=/etc/apt/trusted.gpg.d/smallstep.asc] https://packages.smallstep.com/stable/debian debs main' | tee /etc/apt/sources.list.d/smallstep.list
+$STD curl -fsSL https://packages.smallstep.com/keys/apt/repo-signing-key.gpg \
+     -o /etc/apt/trusted.gpg.d/smallstep.asc
+$STD echo 'deb [signed-by=/etc/apt/trusted.gpg.d/smallstep.asc] \
+     https://packages.smallstep.com/stable/debian debs main' \
+     | tee /etc/apt/sources.list.d/smallstep.list
 $STD apt-get update
 $STD apt-get -y install step-cli step-ca
 msg_ok "${APP} instalado"
