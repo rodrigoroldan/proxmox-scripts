@@ -20,15 +20,15 @@ var_os="${var_os:-debian}"
 var_version="${var_version:-12}"
 var_unprivileged="${var_unprivileged:-1}"
 
-# 4) Inicia framework de validações e UI
+# 4) Framework de UI e validações
 header_info "$APP"
 variables
 color
 catch_errors
 
-# 5) Função de update (chamada via --update)
+# 5) Função de atualização (via --update)
 function update_script() {
-  header_info "$APP"       # Não falhará, pois get_header está stubado
+  header_info "$APP"
   check_container_storage
   check_container_resources
 
@@ -44,28 +44,32 @@ function update_script() {
   exit 0
 }
 
-# 6) Criação do container
+# 6) Cria o container
 start
 build_container
 
-# 7) Descrição (stubbed, não falhará)
+# 7) Descrição (stubbed)
 description
 
-# 8) Instalação do Step CA
+# 8) Aqui definimos STD para executar dentro do container recém-criado
+#    usando lxc-attach (ou substitua por `pct exec` se preferir)
+STD="lxc-attach -n ${CTID} -- "
+
+# 9) Instalação do Step CA dentro do container
 msg_info "Instalando ${APP}"
 $STD apt-get update
 $STD apt-get install -y --no-install-recommends curl vim gpg ca-certificates
 $STD curl -fsSL https://packages.smallstep.com/keys/apt/repo-signing-key.gpg \
      -o /etc/apt/trusted.gpg.d/smallstep.asc
-$STD echo 'deb [signed-by=/etc/apt/trusted.gpg.d/smallstep.asc] \
+$STD bash -c "echo 'deb [signed-by=/etc/apt/trusted.gpg.d/smallstep.asc] \
      https://packages.smallstep.com/stable/debian debs main' \
-     > /etc/apt/sources.list.d/smallstep.list
+     > /etc/apt/sources.list.d/smallstep.list"
 $STD apt-get update
 $STD apt-get -y install step-cli step-ca
 msg_ok "${APP} instalado"
 
-# 9) Inicializa a CA se ainda não existir
-if [[ ! -f /etc/step/config/ca.json ]]; then
+# 10) Inicializa a CA se ainda não existir
+if $STD [ ! -f /etc/step/config/ca.json ]; then
   msg_info "Inicializando configuração do ${APP}"
   $STD step ca init \
     --name "Internal CA" \
@@ -75,7 +79,7 @@ if [[ ! -f /etc/step/config/ca.json ]]; then
   msg_ok "${APP} inicializado"
 fi
 
-# 10) Mensagem final
+# 11) Mensagem final
 msg_ok "Concluído com sucesso!"
 echo -e "${CREATING}${GN}${APP} configurado com sucesso!${CL}"
 echo -e "${INFO}${YW} Acesse sua CA em:${CL}"
