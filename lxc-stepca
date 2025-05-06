@@ -5,8 +5,8 @@ source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxV
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://www.debian.org/
 
-APP="Debian"
-var_tags="${var_tags:-os}"
+APP="Step CA"
+var_tags="${var_tags:-ca}"
 var_cpu="${var_cpu:-1}"
 var_ram="${var_ram:-512}"
 var_disk="${var_disk:-2}"
@@ -41,7 +41,8 @@ description
 msg_info "Instalando ${APP}"
 $STD apt-get update
 $STD apt-get install -y --no-install-recommends curl vim gpg ca-certificates
-$STD curl -fsSL https://packages.smallstep.com/keys/apt/repo-signing-key.gpg -o /etc/apt/trusted.gpg.d/smallstep.asc && echo 'deb [signed-by=/etc/apt/trusted.gpg.d/smallstep.asc] https://packages.smallstep.com/stable/debian debs main' | tee /etc/apt/sources.list.d/smallstep.list
+$STD curl -fsSL https://packages.smallstep.com/keys/apt/repo-signing-key.gpg -o /etc/apt/trusted.gpg.d/smallstep.asc
+$STD echo 'deb [signed-by=/etc/apt/trusted.gpg.d/smallstep.asc] https://packages.smallstep.com/stable/debian debs main' | tee /etc/apt/sources.list.d/smallstep.list
 $STD apt-get update
 $STD apt-get -y install step-cli step-ca
 msg_ok "${APP} instalado"
