@@ -15,13 +15,18 @@ var_os="${var_os:-debian}"
 var_version="${var_version:-12}"
 var_unprivileged="${var_unprivileged:-1}"
 
+# Show header before enabling strict error handling
 header_info "$APP"
 variables
 color
 catch_errors
 
 function update_script() {
-    header_info
+    # allow header_info to fail without aborting
+    set +e
+    header_info "$APP"
+    set -e
+
     check_container_storage
     check_container_resources
 
@@ -48,7 +53,7 @@ $STD curl -fsSL https://packagecloud.io/install/repositories/smallstep/cli/scrip
 $STD apt-get install -y step-ca
 msg_ok "${APP} installed"
 
-# Optional: initialize the CA if not already configured
+# initialize the CA if not already configured
 if [[ ! -f /etc/step/config/ca.json ]]; then
   msg_info "Initializing ${APP} configuration"
   $STD step ca init \
